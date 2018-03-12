@@ -137,6 +137,10 @@ namespace SLVSPDataExport
                                 {
                                     skuFieldValue = currentItem[skuFieldInternalName] == null ? "" : currentItem[skuFieldInternalName].ToString();
                                 }
+                                if (skuFieldValue == "")
+                                {
+                                    continue;
+                                }
                                 dataRow["Material No"] = skuFieldValue;
 
                                 string articleNoFieldValue = string.Empty;
@@ -208,6 +212,10 @@ namespace SLVSPDataExport
                                         {
                                             skuFieldValue = currentItem[skuFieldInternalName] == null ? "" : currentItem[skuFieldInternalName].ToString();
                                         }
+                                        if (skuFieldValue == "")
+                                        {
+                                            continue;
+                                        }
                                         dataRow["Material No"] = skuFieldValue;
 
                                         string articleNoFieldValue = string.Empty;
@@ -238,7 +246,7 @@ namespace SLVSPDataExport
                                     clientContext.Load(field);
                                     clientContext.ExecuteQuery();
                                     string fieldInternalName = field.InternalName;
-
+                                    string fieldValue = string.Empty;
                                     bool flag = field.TypeDisplayName.Contains("lookup") || field.TypeDisplayName.Contains("Nachschlagen");
                                     if (flag)
                                     {
@@ -252,12 +260,19 @@ namespace SLVSPDataExport
                                             //var childId_Id = lookupValue.LookupId;
 
                                         }
-                                        dataRow[fieldDisName] = lookupValues;
+                                        fieldValue = lookupValues;
+                                        //dataRow[fieldDisName] = lookupValues;
                                     }
                                     else
                                     {
-                                        dataRow[fieldDisName] = currentItem[fieldInternalName] == null ? "" : currentItem[fieldInternalName].ToString();
+                                        fieldValue = currentItem[fieldInternalName] == null ? "" : currentItem[fieldInternalName].ToString();
+                                        //dataRow[fieldDisName] = currentItem[fieldInternalName] == null ? "" : currentItem[fieldInternalName].ToString();
                                     }
+                                    if (fieldDisName == "Material No" && fieldValue == "")
+                                    {
+                                        continue;
+                                    }
+                                    dataRow[fieldDisName] = fieldValue;
 
                                 }
                             }

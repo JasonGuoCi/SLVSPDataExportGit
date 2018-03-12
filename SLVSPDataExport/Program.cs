@@ -76,11 +76,12 @@ namespace SLVSPDataExport
                     for (int m = 0; m < listArray.Count(); m++)
                     {
                         string lstName = listArray[m];
+                        //string lstName = "Recommended Bulb";//for test
                         //qu de xiang tong list de ziduan
                         DataRow[] rowsArray = sourceSPListFieldsDT.Select("SPList='" + lstName + "'");
                         if (rowsArray.Length > 0)
                         {
-                            //lstName = "EEK Bulb";//for test
+
                             DataTable dt = ListHelperCSOM.GeChangedItems(rowsArray, siteUrl, userName, pwd, domain, lstName, viewName, logPath, logPathSuccess);
                             //DataTable dt = ListHelper.GeChangedItems(rowsArray, siteUrl, listArray[m], viewName, logPath, logPathSuccess);
 
