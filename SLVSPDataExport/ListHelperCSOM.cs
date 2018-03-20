@@ -81,7 +81,7 @@ namespace SLVSPDataExport
                     query.Update = true;
 
                     query.ChangeTokenStart = new ChangeToken();
-                    query.ChangeTokenStart.StringValue = string.Format("1;3;{0};{1};-1", list.Id.ToString(), DateTime.Now.AddDays(-10).ToUniversalTime().Ticks.ToString());
+                    query.ChangeTokenStart.StringValue = string.Format("1;3;{0};{1};-1", list.Id.ToString(), DateTime.Now.AddDays(-1).ToUniversalTime().Ticks.ToString());
 
                     ChangeCollection changes = list.GetChanges(query);
                     clientContext.Load(changes);

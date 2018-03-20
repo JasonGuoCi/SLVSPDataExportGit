@@ -376,6 +376,10 @@ namespace SLVSPDataExportAll
                                     {
                                         skuFieldValue = currentItem[skuFieldInternalName] == null ? "" : currentItem[skuFieldInternalName].ToString();
                                     }
+                                    if (skuFieldValue == "")
+                                    {
+                                        goto SKUNULL;
+                                    }
                                     dataRow["Material No"] = skuFieldValue;
 
                                     string articleNoFieldValue = string.Empty;
@@ -447,6 +451,10 @@ namespace SLVSPDataExportAll
                                             {
                                                 skuFieldValue = currentItem[skuFieldInternalName] == null ? "" : currentItem[skuFieldInternalName].ToString();
                                             }
+                                            if (skuFieldValue == "")
+                                            {
+                                                goto SKUNULL;
+                                            }
                                             dataRow["Material No"] = skuFieldValue;
 
                                             string articleNoFieldValue = string.Empty;
@@ -491,11 +499,20 @@ namespace SLVSPDataExportAll
                                                 //var childId_Id = lookupValue.LookupId;
 
                                             }
+                                            if (fieldDisName == "Material No" && lookupValues == "")
+                                            {
+                                                goto SKUNULL;
+                                            }
                                             dataRow[fieldDisName] = lookupValues;
                                         }
                                         else
                                         {
-                                            dataRow[fieldDisName] = currentItem[fieldInternalName] == null ? "" : currentItem[fieldInternalName].ToString();
+                                            string v = currentItem[fieldInternalName] == null ? "" : currentItem[fieldInternalName].ToString(); ;
+                                            if (fieldDisName == "Material No" && v == "")
+                                            {
+                                                goto SKUNULL;
+                                            }
+                                            dataRow[fieldDisName] = v;
                                         }
 
                                     }
@@ -504,6 +521,8 @@ namespace SLVSPDataExportAll
                             }
 
                             dt.Rows.Add(dataRow);
+                        SKUNULL:
+                            LogHelper.WriteLogSuccess("the item id= " + item.Id + ", materal no is null, skip it ", successLogPath);
                         }
                     }
 
@@ -514,6 +533,26 @@ namespace SLVSPDataExportAll
             {
                 LogHelper.WriteLog("Something wrong in GetChangedItems methed while retrieve the list items in the list " + listName + ", the error: " + ex.ToString(), logPath);
                 return null;
+
+            }
+        }
+
+        public static void GetItemById(string siteUrl, string userName, string pwd, string domain)
+        {
+            string listName = "Dimension";
+            ClientContext clientContext = new ClientContext(siteUrl);
+            clientContext.Credentials = new NetworkCredential(userName, pwd, domain);
+
+            ListCollection lists = clientContext.Web.Lists;
+            IEnumerable<List> results = clientContext.LoadQuery<List>(lists.Where(lst => lst.Title == listName));
+            clientContext.ExecuteQuery();
+            List list = results.FirstOrDefault();
+
+            if (list != null)
+            {
+                ListItem item = list.GetItemById(9619);
+                clientContext.Load(item);
+                clientContext.ExecuteQuery();
 
             }
         }

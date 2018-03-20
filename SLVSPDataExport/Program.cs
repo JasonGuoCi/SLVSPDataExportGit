@@ -31,16 +31,18 @@ namespace SLVSPDataExport
         static void Main(string[] args)
         {
             Console.WriteLine("Export Data Start...");
-            logPath = ConfigurationManager.AppSettings["logPath"] + DateTime.Now.ToString("ddMMyyyyhhmmss") + ".txt";
-            logPathSuccess = ConfigurationManager.AppSettings["logPathSuccess"] + DateTime.Now.ToString("ddMMyyyyhhmmss") + ".txt";
+            logPath = ConfigurationManager.AppSettings["logPath"] + DateTime.Now.ToString("yyyy_MM_dd_hh_mm_ss") + ".txt";
+            logPathSuccess = ConfigurationManager.AppSettings["logPathSuccess"] + DateTime.Now.ToString("yyyy_MM_dd_hh_mm_ss") + ".txt";
             sourceSPListFields = ConfigurationManager.AppSettings["sourceSPListFields"];
-            resultPath = ConfigurationManager.AppSettings["resultPath"] + DateTime.Now.ToString("ddMMyyyyhhmmss") + ".csv";
+            resultPath = ConfigurationManager.AppSettings["resultPath"] + DateTime.Now.ToString("yyyy_MM_dd_hh_mm_ss") + ".csv";
             siteUrl = ConfigurationManager.AppSettings["siteUrl"];
             viewName = ConfigurationManager.AppSettings["viewName"];
             userName = ConfigurationManager.AppSettings["userName"];
             pwd = ConfigurationManager.AppSettings["pwd"];
             domain = ConfigurationManager.AppSettings["domain"];
+            LogHelper.WriteLogSuccess("Export begin " + DateTime.Now.ToString("yyyy_MM_dd_hh_mm_ss"), logPathSuccess);
             Write2CSV();
+            LogHelper.WriteLogSuccess("Export end " + DateTime.Now.ToString("yyyy_MM_dd_hh_mm_ss"), logPathSuccess);
             Console.WriteLine("Add finish..., please click any key to exist.");
             Console.ReadKey();
         }
@@ -48,6 +50,7 @@ namespace SLVSPDataExport
         public static void Write2CSV()
         {
             DataTable sourceSPListFieldsDT = ExcelHelper.ExcelToDataTable(sourceSPListFields, true, logPath, logPathSuccess);
+            DataTable dtAll = new DataTable();
             for (int m = 0; m < listArray.Count(); m++)
             {
                 string lstName = listArray[m];
@@ -61,6 +64,10 @@ namespace SLVSPDataExport
                 {
                     //headerName += sourceSPListFieldsDT.Rows[i]["Header"].ToString() + ",";
                     headerName += sourceSPListFieldsDT.Rows[i]["Header"].ToString() + ";";
+                    if (!dtAll.Columns.Contains(sourceSPListFieldsDT.Rows[i][1].ToString()))
+                    {
+                        dtAll.Columns.Add(sourceSPListFieldsDT.Rows[i][1].ToString(), Type.GetType("System.String"));
+                    }
                     //for (int j = 0; j < sourceSPListFieldsDT.Columns.Count; j++)
                     //{
                     //    headerName += sourceSPListFieldsDT.Rows[i]["Header"].ToString() + ",";
@@ -85,7 +92,52 @@ namespace SLVSPDataExport
                             DataTable dt = ListHelperCSOM.GeChangedItems(rowsArray, siteUrl, userName, pwd, domain, lstName, viewName, logPath, logPathSuccess);
                             //DataTable dt = ListHelper.GeChangedItems(rowsArray, siteUrl, listArray[m], viewName, logPath, logPathSuccess);
 
+                            #region export each sku in one line
+                            if (dt != null && dt.Rows.Count > 0)
+                            {
+                                int rowCount = dt.Rows.Count;
+                                int columnCount = dt.Columns.Count;
+                                for (int i = 0; i < rowCount; i++)
+                                {
+                                    DataRow[] dtAllRowsArray = dtAll.Select("[Material No]='" + dt.Rows[i]["Material No"] + "'");
+                                    //if material no exist
+                                    if (dtAllRowsArray.Length > 0)
+                                    {
+                                        foreach (DataRow dtAllRowsArrayRow in dtAllRowsArray)
+                                        {
+                                            for (int j = 0; j < rowsArray.Length; j++)
+                                            {
+                                                dtAllRowsArrayRow[rowsArray[j][1].ToString()] = dt.Rows[i][rowsArray[j][1].ToString()];
+                                            }
 
+                                        }
+
+                                    }
+                                    else//material no not exists
+                                    {
+                                        if (dt.Rows[i][0].ToString() == "")
+                                        {
+                                            continue;
+                                        }
+                                        DataRow dtAllNewRow = dtAll.NewRow();
+                                        dtAllNewRow["Material No"] = dt.Rows[i]["Material No"].ToString();
+                                        dtAllNewRow["Project Article No"] = dt.Rows[i]["Project Article No"].ToString();
+                                        for (int j = 0; j < rowsArray.Length; j++)
+                                        {
+                                            dtAllNewRow[rowsArray[j][1].ToString()] = dt.Rows[i][rowsArray[j][1].ToString()];
+                                        }
+                                        dtAll.Rows.Add(dtAllNewRow);
+
+                                    }
+
+                                }
+
+                            }
+
+                            #endregion
+
+                            #region get all changed data to csv
+                            /*
                             if (dt != null && dt.Rows.Count > 0)
                             {
                                 int rowCount = dt.Rows.Count;//行数  
@@ -95,6 +147,10 @@ namespace SLVSPDataExport
 
                                     for (int i = 0; i < rowCount; i++)
                                     {
+                                        if (dt.Rows[i][0].ToString() == "")
+                                        {
+                                            continue;
+                                        }
                                         for (int j = 0; j < columnCount; j++)
                                         {
                                             //line = line + dt.Rows[i][j].ToString() + ",";
@@ -108,22 +164,27 @@ namespace SLVSPDataExport
                                 }
                                 else
                                 {
-                                    string newline = line + dt.Rows[0][0].ToString() + ";;" + dt.Rows[0][1];
-                                    int semicolonCount = 0;
-                                    for (int i = 0; i < m; i++)
-                                    {
-                                        semicolonCount = semicolonCount + listFieldsCount[i];
-                                    }
-                                    string simicolonSeparator = string.Empty;
-                                    for (int j = 0; j < semicolonCount - 2; j++)
-                                    {
-                                        //line = line + ",";
-                                        simicolonSeparator = simicolonSeparator + ";";
-                                    }
-                                    //simicolonSeparator = line + simicolonSeparator;
 
                                     for (int i = 0; i < rowCount; i++)
                                     {
+                                        if (dt.Rows[i][0].ToString() == "")
+                                        {
+                                            continue;
+                                        }
+                                        string newline = line + dt.Rows[i][0].ToString() + ";;" + dt.Rows[i][1];
+                                        int semicolonCount = 0;
+                                        for (int y = 0; y < m; y++)
+                                        {
+                                            semicolonCount = semicolonCount + listFieldsCount[y];
+                                        }
+                                        string simicolonSeparator = string.Empty;
+                                        for (int j = 0; j < semicolonCount - 2; j++)
+                                        {
+                                            //line = line + ",";
+                                            simicolonSeparator = simicolonSeparator + ";";
+                                        }
+                                        //simicolonSeparator = line + simicolonSeparator;
+
                                         line = newline + simicolonSeparator;
                                         for (int j = 2; j < columnCount; j++)
                                         {
@@ -139,10 +200,31 @@ namespace SLVSPDataExport
                                 }
 
                             }
-
-
+                             * */
+                            #endregion
 
                         }
+                    }
+
+                    string csvRow = string.Empty;
+                    for (int j = 0; j < dtAll.Rows.Count; j++)
+                    {
+                        if (dtAll.Rows[j]["Material No"].ToString() == "")
+                        {
+                            continue;
+                        }
+                        for (int k = 0; k < sourceSPListFieldsDT.Rows.Count; k++)
+                        {
+                            if (sourceSPListFieldsDT.Rows[k][1].ToString() == "")
+                            {
+                                continue;
+                            }
+                            string csvFieldValue = dtAll.Rows[j][sourceSPListFieldsDT.Rows[k][1].ToString()] == null ? "" : dtAll.Rows[j][sourceSPListFieldsDT.Rows[k][1].ToString()].ToString();
+                            csvRow += csvFieldValue + ";";
+                        }
+                        csvRow = csvRow.TrimEnd(';');
+                        WriteResult(csvRow);
+                        csvRow = string.Empty;
                     }
                     LogHelper.WriteLogSuccess("Write data to csv success", logPathSuccess);
                 }
